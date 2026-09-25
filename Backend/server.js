@@ -1,8 +1,3 @@
-// ============================================================
-// server.js — API REST do Sistema de Gestão de Oficina Mecânica
-// Cobre RF01 (Clientes/Veículos) e RF02 (Ordens de Serviço)
-// ============================================================
-
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -12,31 +7,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ------------------------------------------------------------
-// Cliente Supabase — variáveis vêm de um arquivo .env local
-// SUPABASE_URL=https://xxxx.supabase.co
-// SUPABASE_KEY=sua-service-role-ou-anon-key
-// ------------------------------------------------------------
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_KEY
 );
 
-// Helper padrão de resposta de erro
+// resposta de erro
 function handleError(res, error, status = 400) {
   console.error(error);
   return res.status(status).json({ erro: error.message || 'Erro inesperado' });
 }
 
-// ============================================================
-// RF01 — CLIENTES
-// ============================================================
-
-// Criar cliente
+// criar cliente
 app.post('/api/clientes', async (req, res) => {
   const { nome, telefone, email } = req.body;
   if (!nome || !telefone) {
-    return res.status(400).json({ erro: 'nome e telefone são obrigatórios' });
+    return res.status(400).json({ erro: 'Nome e telefone são obrigatórios' });
   }
 
   const { data, error } = await supabase
@@ -60,10 +46,6 @@ app.get('/api/clientes', async (req, res) => {
   res.json(data);
 });
 
-// ============================================================
-// RF01 — VEÍCULOS
-// ============================================================
-
 // Criar veículo vinculado a um cliente
 app.post('/api/veiculos', async (req, res) => {
   const { cliente_id, placa, marca, modelo, ano } = req.body;
@@ -83,7 +65,7 @@ app.post('/api/veiculos', async (req, res) => {
   res.status(201).json(data);
 });
 
-// Listar veículos (opcionalmente filtrando por cliente)
+// Listar veículos
 app.get('/api/veiculos', async (req, res) => {
   const { cliente_id } = req.query;
 
@@ -95,11 +77,7 @@ app.get('/api/veiculos', async (req, res) => {
   res.json(data);
 });
 
-// ============================================================
-// RF02 — ORDENS DE SERVIÇO
-// ============================================================
-
-// Criar OS vinculada a cliente + veículo
+// criar OS vinculado cliente + veiculo
 app.post('/api/ordens-servico', async (req, res) => {
   const { cliente_id, veiculo_id, descricao } = req.body;
   if (!cliente_id || !veiculo_id) {
@@ -116,7 +94,7 @@ app.post('/api/ordens-servico', async (req, res) => {
   res.status(201).json(data);
 });
 
-// Listar ordens de serviço, com dados de cliente e veículo (join)
+// listar os
 app.get('/api/ordens-servico', async (req, res) => {
   const { data, error } = await supabase
     .from('ordens_servico')
@@ -134,7 +112,7 @@ app.get('/api/ordens-servico', async (req, res) => {
   res.json(data);
 });
 
-// Atualizar status da OS (ex.: aberta -> diagnostico -> em_execucao ...)
+// atualizar status 
 app.patch('/api/ordens-servico/:id/status', async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
@@ -158,7 +136,6 @@ app.patch('/api/ordens-servico/:id/status', async (req, res) => {
   res.json(data);
 });
 
-// ============================================================
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3001;

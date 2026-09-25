@@ -112,7 +112,7 @@ export default function OrdensServico() {
   return (
     <div className="page">
       <section className="page-header">
-        <p className="eyebrow">Fluxo de atendimento</p>
+        <p className="eyebrow">Fluxo de Atendimento</p>
         <h1>Ordens de Servico</h1>
         <p>Abra OS vinculando cliente e veiculo, depois acompanhe cada etapa por status.</p>
       </section>
@@ -123,7 +123,6 @@ export default function OrdensServico() {
         <div className="section-heading">
           <div>
             <h2>Nova ordem</h2>
-            <p>A OS sempre nasce com status aberta, conforme o backend atual.</p>
           </div>
         </div>
 

@@ -112,7 +112,6 @@ export default function Clientes() {
         <div className="section-heading">
           <div>
             <h2>Clientes cadastrados</h2>
-            <p>Lista alimentada por GET /api/clientes.</p>
           </div>
           <span className="panel-count">{clientes.length} registros</span>
         </div>

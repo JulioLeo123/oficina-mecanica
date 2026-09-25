@@ -1,7 +1,7 @@
 {
   "name": "oficina-mecanica-backend",
   "version": "1.0.0",
-  "description": "API REST do Sistema de Gestão de Oficina Mecânica (Entrega Parcial 1)",
+  "description": "API REST do Sistema de Gestão de Oficina Mecânica",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {

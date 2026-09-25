@@ -1,11 +1,3 @@
-/*
-  Tema Oficina Pro
-  --color-primary: azul tecnico para navegacao e acoes principais
-  --color-accent: amarelo ferramenta para destaques discretos
-  --color-danger: vermelho de bloqueio/reprovacao
-  --color-success: verde operacional para aprovacoes
-  --color-surface: superficies de cards, formularios e tabelas
-*/
 :root {
   --color-primary: #17456b;
   --color-primary-strong: #0f2d45;

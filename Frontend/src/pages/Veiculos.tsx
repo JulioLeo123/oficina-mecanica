@@ -98,7 +98,7 @@ export default function Veiculos() {
         <div className="section-heading">
           <div>
             <h2>Novo veiculo</h2>
-            <p>Cliente, placa, marca e modelo sao obrigatorios.</p>
+            <p>Cadastre um novo veiculo.</p>
           </div>
         </div>
 
@@ -160,7 +160,6 @@ export default function Veiculos() {
         <div className="section-heading">
           <div>
             <h2>Veiculos cadastrados</h2>
-            <p>Lista alimentada por GET /api/veiculos.</p>
           </div>
           <span className="panel-count">{veiculos.length} registros</span>
         </div>

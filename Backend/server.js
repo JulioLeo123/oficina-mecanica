@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const clientesModel = require('./models/clientesModel');
+const veiculosModel = require('./models/veiculosModel');
+const ordensServicoModel = require('./models/ordensServicoModel');
 
 const app = express();
 app.use(cors());
@@ -12,131 +15,91 @@ const supabase = createClient(
   process.env.SUPABASE_KEY
 );
 
-// resposta de erro
-function handleError(res, error, status = 400) {
-  console.error(error);
-  return res.status(status).json({ erro: error.message || 'Erro inesperado' });
+clientesModel.setSupabase(supabase);
+veiculosModel.setSupabase(supabase);
+ordensServicoModel.setSupabase(supabase);
+
+function asyncRoute(handler) {
+  return (req, res, next) => {
+    Promise.resolve(handler(req, res, next)).catch(next);
+  };
 }
 
-// criar cliente
-app.post('/api/clientes', async (req, res) => {
-  const { nome, telefone, email } = req.body;
-  if (!nome || !telefone) {
-    return res.status(400).json({ erro: 'Nome e telefone são obrigatórios' });
-  }
+app.post('/api/clientes', asyncRoute(async (req, res) => {
+  const cliente = await clientesModel.create(req.body);
+  res.status(201).json(cliente);
+}));
 
-  const { data, error } = await supabase
-    .from('clientes')
-    .insert([{ nome, telefone, email }])
-    .select()
-    .single();
+app.get('/api/clientes', asyncRoute(async (_req, res) => {
+  res.json(await clientesModel.list());
+}));
 
-  if (error) return handleError(res, error);
-  res.status(201).json(data);
+app.get('/api/clientes/:id', asyncRoute(async (req, res) => {
+  res.json(await clientesModel.findById(req.params.id));
+}));
+
+app.put('/api/clientes/:id', asyncRoute(async (req, res) => {
+  res.json(await clientesModel.update(req.params.id, req.body));
+}));
+
+app.delete('/api/clientes/:id', asyncRoute(async (req, res) => {
+  res.json(await clientesModel.remove(req.params.id));
+}));
+
+app.post('/api/veiculos', asyncRoute(async (req, res) => {
+  const veiculo = await veiculosModel.create(req.body);
+  res.status(201).json(veiculo);
+}));
+
+app.get('/api/veiculos', asyncRoute(async (req, res) => {
+  res.json(await veiculosModel.list(req.query.cliente_id));
+}));
+
+app.get('/api/veiculos/:id', asyncRoute(async (req, res) => {
+  res.json(await veiculosModel.findById(req.params.id));
+}));
+
+app.put('/api/veiculos/:id', asyncRoute(async (req, res) => {
+  res.json(await veiculosModel.update(req.params.id, req.body));
+}));
+
+app.delete('/api/veiculos/:id', asyncRoute(async (req, res) => {
+  res.json(await veiculosModel.remove(req.params.id));
+}));
+
+app.post('/api/ordens-servico', asyncRoute(async (req, res) => {
+  const ordem = await ordensServicoModel.create(req.body);
+  res.status(201).json(ordem);
+}));
+
+app.get('/api/ordens-servico', asyncRoute(async (_req, res) => {
+  res.json(await ordensServicoModel.list());
+}));
+
+app.get('/api/ordens-servico/:id', asyncRoute(async (req, res) => {
+  res.json(await ordensServicoModel.findById(req.params.id));
+}));
+
+app.put('/api/ordens-servico/:id', asyncRoute(async (req, res) => {
+  res.json(await ordensServicoModel.update(req.params.id, req.body));
+}));
+
+app.delete('/api/ordens-servico/:id', asyncRoute(async (req, res) => {
+  res.json(await ordensServicoModel.remove(req.params.id));
+}));
+
+app.patch('/api/ordens-servico/:id/status', asyncRoute(async (req, res) => {
+  res.json(await ordensServicoModel.updateStatus(req.params.id, req.body));
+}));
+
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+app.use((error, _req, res, _next) => {
+  console.error(error);
+  const status = error.status
+    || (error.code === '23505' ? 409 : error.code === '23503' ? 400 : 500);
+  res.status(status).json({ erro: error.message || 'Erro inesperado' });
 });
-
-// Listar clientes
-app.get('/api/clientes', async (req, res) => {
-  const { data, error } = await supabase
-    .from('clientes')
-    .select('*')
-    .order('criado_em', { ascending: false });
-
-  if (error) return handleError(res, error);
-  res.json(data);
-});
-
-// Criar veículo vinculado a um cliente
-app.post('/api/veiculos', async (req, res) => {
-  const { cliente_id, placa, marca, modelo, ano } = req.body;
-  if (!cliente_id || !placa || !marca || !modelo) {
-    return res.status(400).json({
-      erro: 'cliente_id, placa, marca e modelo são obrigatórios',
-    });
-  }
-
-  const { data, error } = await supabase
-    .from('veiculos')
-    .insert([{ cliente_id, placa, marca, modelo, ano }])
-    .select()
-    .single();
-
-  if (error) return handleError(res, error);
-  res.status(201).json(data);
-});
-
-// Listar veículos
-app.get('/api/veiculos', async (req, res) => {
-  const { cliente_id } = req.query;
-
-  let query = supabase.from('veiculos').select('*').order('criado_em', { ascending: false });
-  if (cliente_id) query = query.eq('cliente_id', cliente_id);
-
-  const { data, error } = await query;
-  if (error) return handleError(res, error);
-  res.json(data);
-});
-
-// criar OS vinculado cliente + veiculo
-app.post('/api/ordens-servico', async (req, res) => {
-  const { cliente_id, veiculo_id, descricao } = req.body;
-  if (!cliente_id || !veiculo_id) {
-    return res.status(400).json({ erro: 'cliente_id e veiculo_id são obrigatórios' });
-  }
-
-  const { data, error } = await supabase
-    .from('ordens_servico')
-    .insert([{ cliente_id, veiculo_id, descricao, status: 'aberta' }])
-    .select()
-    .single();
-
-  if (error) return handleError(res, error);
-  res.status(201).json(data);
-});
-
-// listar os
-app.get('/api/ordens-servico', async (req, res) => {
-  const { data, error } = await supabase
-    .from('ordens_servico')
-    .select(`
-      id,
-      status,
-      descricao,
-      criado_em,
-      clientes ( id, nome, telefone ),
-      veiculos ( id, placa, marca, modelo )
-    `)
-    .order('criado_em', { ascending: false });
-
-  if (error) return handleError(res, error);
-  res.json(data);
-});
-
-// atualizar status 
-app.patch('/api/ordens-servico/:id/status', async (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
-
-  const statusValidos = [
-    'aberta', 'diagnostico', 'orcamento_pendente',
-    'aprovada', 'nao_aprovada', 'em_execucao', 'finalizada',
-  ];
-  if (!statusValidos.includes(status)) {
-    return res.status(400).json({ erro: 'status inválido' });
-  }
-
-  const { data, error } = await supabase
-    .from('ordens_servico')
-    .update({ status })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) return handleError(res, error);
-  res.json(data);
-});
-
-app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

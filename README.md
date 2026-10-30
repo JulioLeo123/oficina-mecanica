@@ -164,13 +164,27 @@ Se a porta `5173` estiver ocupada, o Vite abrirá automaticamente outra porta.
 | --- | --- | --- |
 | `GET` | `/api/health` | Verifica se a API está online |
 | `GET` | `/api/clientes` | Lista clientes |
+| `GET` | `/api/clientes/:id` | Busca um cliente pelo UUID |
 | `POST` | `/api/clientes` | Cria um cliente |
+| `PUT` | `/api/clientes/:id` | Atualiza os dados de um cliente |
+| `DELETE` | `/api/clientes/:id` | Remove um cliente |
 | `GET` | `/api/veiculos` | Lista veículos |
-| `GET` | `/api/veiculos?cliente_id=ID` | Lista veículos de um cliente |
+| `GET` | `/api/veiculos?cliente_id=UUID` | Lista veículos de um cliente |
+| `GET` | `/api/veiculos/:id` | Busca um veículo pelo UUID |
 | `POST` | `/api/veiculos` | Cria um veículo |
+| `PUT` | `/api/veiculos/:id` | Atualiza os dados de um veículo |
+| `DELETE` | `/api/veiculos/:id` | Remove um veículo |
 | `GET` | `/api/ordens-servico` | Lista ordens de serviço |
+| `GET` | `/api/ordens-servico/:id` | Busca uma ordem de serviço pelo UUID |
 | `POST` | `/api/ordens-servico` | Cria uma ordem de serviço |
-| `PATCH` | `/api/ordens-servico/:id/status` | Atualiza o status da OS |
+| `PUT` | `/api/ordens-servico/:id` | Atualiza uma ordem de serviço |
+| `DELETE` | `/api/ordens-servico/:id` | Remove uma ordem de serviço |
+| `PATCH` | `/api/ordens-servico/:id/status` | Atualiza somente o status da OS |
+
+Os endpoints `PUT` recebem a representação completa dos campos editáveis do
+recurso. Clientes exigem `nome` e `telefone`; veículos exigem `cliente_id`,
+`placa`, `marca` e `modelo`; ordens exigem `cliente_id`, `veiculo_id` e `status`.
+Campos opcionais podem ser enviados como `null`.
 
 ## Exemplos de Requisições
 
@@ -184,11 +198,26 @@ Se a porta `5173` estiver ocupada, o Vite abrirá automaticamente outra porta.
 }
 ```
 
+### Atualizar cliente
+
+```http
+PUT /api/clientes/UUID_DO_CLIENTE
+Content-Type: application/json
+```
+
+```json
+{
+  "nome": "João Silva",
+  "telefone": "(11) 99999-9999",
+  "email": "joao.novo@email.com"
+}
+```
+
 ### Criar veículo
 
 ```json
 {
-  "cliente_id": 1,
+  "cliente_id": "UUID_DO_CLIENTE",
   "placa": "ABC1D23",
   "marca": "Toyota",
   "modelo": "Corolla",
@@ -196,13 +225,46 @@ Se a porta `5173` estiver ocupada, o Vite abrirá automaticamente outra porta.
 }
 ```
 
+### Atualizar veículo
+
+```http
+PUT /api/veiculos/UUID_DO_VEICULO
+Content-Type: application/json
+```
+
+```json
+{
+  "cliente_id": "UUID_DO_CLIENTE",
+  "placa": "ABC1D23",
+  "marca": "Toyota",
+  "modelo": "Corolla",
+  "ano": 2021
+}
+```
+
 ### Criar ordem de serviço
 
 ```json
 {
-  "cliente_id": 1,
-  "veiculo_id": 1,
+  "cliente_id": "UUID_DO_CLIENTE",
+  "veiculo_id": "UUID_DO_VEICULO",
   "descricao": "Barulho na suspensão dianteira"
+}
+```
+
+### Atualizar ordem de serviço
+
+```http
+PUT /api/ordens-servico/UUID_DA_ORDEM
+Content-Type: application/json
+```
+
+```json
+{
+  "cliente_id": "UUID_DO_CLIENTE",
+  "veiculo_id": "UUID_DO_VEICULO",
+  "descricao": "Revisar suspensão dianteira",
+  "status": "em_execucao"
 }
 ```
 
@@ -214,9 +276,29 @@ Se a porta `5173` estiver ocupada, o Vite abrirá automaticamente outra porta.
 }
 ```
 
+Os UUIDs são retornados pelo banco nas respostas de criação e listagem. Os
+endpoints de remoção retornam o registro removido. Uma tentativa de remover
+cliente ou veículo relacionado a uma ordem de serviço é rejeitada pelo banco
+para preservar as referências.
+
+Erros são retornados em JSON no formato `{"erro":"mensagem"}`. IDs inválidos
+retornam `400`, registros inexistentes retornam `404`, conflitos de unicidade
+retornam `409` e erros inesperados de persistência retornam `500`.
+
 ## Design e Arquitetura
 
-O frontend foi separado em páginas, componentes e serviços para facilitar manutenção e apresentação acadêmica:
+O backend aplica o padrão Model/DAO e separa as responsabilidades:
+
+- `server.js`: declara rotas HTTP, configura middlewares e transforma exceções em respostas HTTP.
+- `models/`: valida os dados e aplica regras de negócio das entidades antes de delegar operações.
+- `dao/`: concentra as consultas e operações de persistência no Supabase/PostgreSQL.
+- `dao/query.js`: padroniza a propagação de erros retornados pelo Supabase.
+
+Cada recurso (`clientes`, `veiculos` e `ordens_servico`) possui seu próprio
+Model e DAO. Assim, as regras e a persistência ficam fora das rotas e podem ser
+mantidas separadamente.
+
+No frontend, páginas, componentes e serviços também são separados para facilitar manutenção:
 
 - `pages/`: telas principais da aplicação.
 - `components/`: elementos reutilizáveis da interface.

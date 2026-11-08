@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDefinition = require('./swagger/openapi');
 const clientesModel = require('./models/clientesModel');
 const veiculosModel = require('./models/veiculosModel');
 const ordensServicoModel = require('./models/ordensServicoModel');
@@ -9,6 +11,35 @@ const ordensServicoModel = require('./models/ordensServicoModel');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Doc Swagger UI
+const swaggerUiOptions = {
+  customSiteTitle: 'API Oficina Mecânica — Docs',
+  customCss: `
+    .swagger-ui .topbar { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+    .swagger-ui .topbar .download-url-wrapper { display: none; }
+    .swagger-ui .info .title { color: #e94560; }
+    .swagger-ui .info { margin: 30px 0; }
+    .swagger-ui .opblock.opblock-get .opblock-summary-method { background: #2196f3; }
+    .swagger-ui .opblock.opblock-post .opblock-summary-method { background: #4caf50; }
+    .swagger-ui .opblock.opblock-put .opblock-summary-method { background: #ff9800; }
+    .swagger-ui .opblock.opblock-patch .opblock-summary-method { background: #9c27b0; }
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method { background: #f44336; }
+    .swagger-ui .btn.execute { background: #e94560; border-color: #e94560; }
+    .swagger-ui .btn.execute:hover { background: #c73652; border-color: #c73652; }
+  `,
+  customfavIcon: 'https://cdn.jsdelivr.net/npm/emoji-favicon-toolkit@1.0.0/dist/favicon.ico',
+  swaggerOptions: {
+    defaultModelsExpandDepth: 1,
+    defaultModelExpandDepth: 2,
+    docExpansion: 'list',
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+    tryItOutEnabled: true,
+  },
+};
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition, swaggerUiOptions));
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -103,5 +134,10 @@ app.use((error, _req, res, _next) => {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Servidor rodando na porta ${PORT}`);
+  console.log(`\n🔧  Oficina Mecânica — API REST`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+  console.log(`🚀  Servidor:    http://localhost:${PORT}`);
+  console.log(`📚  Swagger UI:  http://localhost:${PORT}/api-docs`);
+  console.log(`💚  Health:      http://localhost:${PORT}/api/health`);
+  console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
 });
